@@ -10,6 +10,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from src.adapters.milvusmanager import milvus_manager
 from src.types import MilvusVectorRecord
 from src.adapters.openaimanager import openai_manager
+from src.adapters.loggingmanager import logger
 
 
 def count_tokens(text: str):
@@ -45,10 +46,14 @@ converter = DocumentConverter()
 
 
 def upload_docs():
+    logger.info("Starting document upload process.")
     result = converter.convert("data/Frequently-asked-questions-2022-15092022.pdf")
+    logger.info("PDF converted to text.")
     pdf_text = result.document.export_to_text()
     pdf_text = re.sub(r"[^\x00-\x7F]+", " ", pdf_text)
     documentation_chunks = split_text(pdf_text)
+    logger.info(f"Document split into {len(documentation_chunks)} chunks.")
+
     milvus_records = list(MilvusVectorRecord.model_fields.keys())
     fields = []
     fields.append(
@@ -79,11 +84,10 @@ def upload_docs():
                     description=f"Field for {field} data",
                 )
             )
-    milvus_collection_name = milvus_manager.MILVUS_COLLECTION_NAME
-    milvus_index_name = milvus_manager.MILVUS_INDEX_NAME
 
+    logger.info("Dropping existing Milvus collection if it exists.")
     milvus_manager.milvus_client.drop_collection(
-        collection_name=milvus_collection_name,
+        collection_name=milvus_manager.MILVUS_COLLECTION_NAME,
     )
     schema = CollectionSchema(
         fields=fields,
@@ -92,16 +96,18 @@ def upload_docs():
     index_params = milvus_manager.milvus_client.prepare_index_params()
     index_params.add_index(
         field_name="contentEmbeddings",
-        index_type="HNSW",
-        metric_type="COSINE",
-        index_name="cyfuture_content_index",
+        index_type=milvus_manager.MILVUS_INDEX_TYPE,
+        metric_type=milvus_manager.MILVUS_DISTANCE_METRIC,
+        index_name=milvus_manager.MILVUS_INDEX_NAME,
     )
+    logger.info("Creating new Milvus collection and index.")
     milvus_manager.milvus_client.create_collection(
-        collection_name=milvus_collection_name,
+        collection_name=milvus_manager.MILVUS_COLLECTION_NAME,
         schema=schema,
         index_params=index_params,
     )
     data_list = []
+    logger.info("Generating embeddings and preparing data for insertion.")
     for idx, doc in enumerate(documentation_chunks):
         doc = doc.strip()
         temp = {
@@ -111,11 +117,15 @@ def upload_docs():
             ]["data"][0]["embedding"],
         }
         data_list.append(MilvusVectorRecord(**temp).model_dump())
+    logger.info(f"Inserting {len(data_list)} records into Milvus.")
     res = milvus_manager.milvus_client.insert(
-        collection_name=milvus_collection_name,
+        collection_name=milvus_manager.MILVUS_COLLECTION_NAME,
         data=data_list,
     )
-    if res.insert_count > 0:
-        return f"Successfully inserted {res.insert_count} records into Milvus."
+
+    if res["insert_count"] > 0:
+        logger.info(f"Successfully inserted {res["insert_count"]} records into Milvus.")
+        return f"Successfully inserted {res["insert_count"]} records into Milvus."
     else:
+        logger.info("No records were inserted into Milvus.")
         return "No records were inserted into Milvus."

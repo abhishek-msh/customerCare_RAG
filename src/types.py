@@ -180,7 +180,7 @@ class UserDetailsModel(BaseModel):
         in the database.
 
         Raises:
-            CyfutureExcExceptioneption: If there is an error while inserting the data into the database.
+            Exception: If there is an error while inserting the data into the database.
         """
         try:
             sql_manager.insert_data(

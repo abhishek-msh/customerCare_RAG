@@ -1,3 +1,7 @@
+import warnings
+
+warnings.filterwarnings("ignore")
+
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
 from src.types import ComplaintModel, ChatBotModel
@@ -8,7 +12,6 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
-create_sql_tables()
 
 app = FastAPI(
     title="Cyfuture AI Bot",
@@ -36,6 +39,13 @@ def read_root():
 def upload_documents():
     res = {"message": upload_docs()}
     return res
+
+
+@app.post("/create_tables", tags=["Database"])
+def create_tables():
+    if create_sql_tables():
+        return {"message": "Tables created successfully"}
+    return {"message": "Table creation failed"}
 
 
 @app.get("/complaints/{complaint_id}", tags=["Complaints"])

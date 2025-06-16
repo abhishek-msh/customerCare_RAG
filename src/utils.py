@@ -20,8 +20,8 @@ def generate_complaint(complaint: ComplaintModel):
         )
         return complaint_analytics
     except Exception as e:
-        logger.error(f"[generate_complaint] - Error generating complaint: {str(e)}")
-        raise Exception(f"Error generating complaint: {str(e)}") from e
+        logger.exception(f"[generate_complaint] - Error generating complaint: {str(e)}")
+        raise e
 
 
 @measure_time
@@ -44,10 +44,10 @@ def get_complaint_client(complaint_id: str) -> ComplaintAnalyticsModel:
         row = result.iloc[0].to_dict()
         return ComplaintAnalyticsModel(**row)
     except Exception as e:
-        logger.error(
+        logger.exception(
             f"[get_complaint_client] - Error fetching complaint for ID {complaint_id}: {str(e)}"
         )
-        raise Exception(f"Error fetching complaint: {str(e)}") from e
+        raise e
 
 
 def get_user_detail(user_id: str):
@@ -96,10 +96,10 @@ def get_complaint_status(complaint_id: str) -> dict:
         complaint_data = response.json()
         return complaint_data
     except requests.RequestException as e:
-        logger.error(
+        logger.exception(
             f"[get_complaint_status] - Error fetching complaint status for {complaint_id}: {str(e)}"
         )
-        raise
+        raise e
 
 
 def create_complaint(complaint: ComplaintModel) -> ComplaintAnalyticsModel:
@@ -119,52 +119,50 @@ def create_complaint(complaint: ComplaintModel) -> ComplaintAnalyticsModel:
         complaint_data = response.json()
         return complaint_data
     except requests.RequestException as e:
-        logger.error(f"[create_complaint] - Error creating complaint: {str(e)}")
-        raise Exception(f"Error creating complaint: {str(e)}") from e
+        logger.exception(f"[create_complaint] - Error creating complaint: {str(e)}")
+        raise e
 
 
 def create_sql_tables():
     try:
         complaint_table_schema = """
-    CREATE TABLE IF NOT EXISTS cyfuture_complaints (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        complaint_id TEXT NOT NULL,
-        name TEXT NOT NULL,
-        phone_number TEXT NOT NULL,
-        email TEXT NOT NULL,
-        complaint_details TEXT NOT NULL,
-        status TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
+CREATE TABLE IF NOT EXISTS cyfuture_complaints (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    complaint_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    phone_number TEXT NOT NULL,
+    email TEXT NOT NULL,
+    complaint_details TEXT NOT NULL,
+    status TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
     """
         sql_manager.execute_query("test", complaint_table_schema)
 
-        user_table_schema = """CREATE TABLE cyfuture_user_details (
-        id           INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id      TEXT NOT NULL,
-        name         TEXT NOT NULL,
-        phone_number TEXT NOT NULL,
-        email        TEXT NOT NULL,
-        created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );"""
+        user_table_schema = """CREATE TABLE IF NOT EXISTS cyfuture_user_details (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    phone_number TEXT NOT NULL,
+    email TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);"""
         sql_manager.execute_query("test", user_table_schema)
 
-        conversation_analytics_table_schema = """
-    CREATE TABLE IF NOT EXISTS cyfuture_conversation_analytics (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id TEXT NOT NULL,
-        user_text TEXT NOT NULL,
-        complaint_details TEXT,
-        response TEXT NOT NULL,
-        followup_flag INTEGER NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-    """
+        conversation_analytics_table_schema = """CREATE TABLE IF NOT EXISTS cyfuture_conversation_analytics (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    user_text TEXT NOT NULL,
+    complaint_details TEXT,
+    response TEXT NOT NULL,
+    followup_flag INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);"""
 
         sql_manager.execute_query("test", conversation_analytics_table_schema)
         logger.info("[create_sql_tables] - SQL tables created successfully")
 
         return True
     except Exception as e:
-        logger.error(f"[create_sql_tables] - Error creating SQL tables: {str(e)}")
-        raise Exception(f"Error creating SQL tables: {str(e)}") from e
+        logger.exception(f"[create_sql_tables] - Error creating SQL tables: {str(e)}")
+        raise e

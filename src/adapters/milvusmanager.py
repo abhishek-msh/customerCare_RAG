@@ -58,12 +58,12 @@ class MilvusManager(MilvusConfig):
             logger.exception(
                 f"[MilvusManager][check_collection_exists] [{transaction_id}] - Failed to check collection existence: {milvus_exc}"
             )
-            raise Exception(error=self.milvus_error, message=str(milvus_exc))
+            raise milvus_exc
         except Exception as exc:
             logger.exception(
                 f"[MilvusManager][check_collection_exists] [{transaction_id}] - Failed to check collection existence: {exc}"
             )
-            raise Exception(error=self.milvus_error, message=str(exc))
+            raise exc
 
     @measure_time
     def search_index(
@@ -90,10 +90,7 @@ class MilvusManager(MilvusConfig):
             List[Dict[str, Any]]: A list of dictionaries containing the search results.
         """
         if not self.check_collection_exists(transaction_id, collection_name):
-            raise Exception(
-                error=self.milvus_error,
-                message=f"Collection {collection_name} does not exist",
-            )
+            raise Exception(f"Collection {collection_name} does not exist.")
         try:
             retrieved_data = self.milvus_client.search(
                 collection_name=collection_name,
@@ -110,12 +107,12 @@ class MilvusManager(MilvusConfig):
             logger.exception(
                 f"[MilvusManager][search_index] [{transaction_id}] - Failed to retrieve data from collection {collection_name}: {milvus_exc}"
             )
-            raise Exception(error=self.milvus_error, message=str(milvus_exc))
+            raise milvus_exc
         except Exception as exc:
             logger.exception(
                 f"[MilvusManager][search_index] [{transaction_id}] - Failed to retrieve data from collection {collection_name}: {exc}"
             )
-            raise Exception(error=self.milvus_error, message=str(exc))
+            raise exc
 
 
 milvus_manager = MilvusManager()

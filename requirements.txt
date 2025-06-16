@@ -1,5 +1,15 @@
-doclingss
+docling
 fastapi
+langchain_text_splitters
 openai
-sqlalchemy
+pandas
+partialjson
+pyodbc
+pydantic
+pymilvus
+python-dotenv
+python-multipart
+SQLAlchemy
 streamlit
+tiktoken
+uvicorn

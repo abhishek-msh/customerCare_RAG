@@ -95,14 +95,14 @@ class SQLiteManager(SqlConfig):
             )
             if connection:
                 connection.close()
-            raise Exception(error=self.sql_error)
+            raise exce
         except Exception as insert_data_exc:
             logger.exception(
                 f"[SQLiteManager][insert_data][{transaction_id}] Error: {str(insert_data_exc)}"
             )
             if connection:
                 connection.close()
-            raise Exception(error=self.sql_error)
+            raise insert_data_exc
         finally:
             if connection:
                 connection.close()
@@ -136,14 +136,14 @@ class SQLiteManager(SqlConfig):
             )
             if connection:
                 connection.close()
-            raise Exception(error=self.sql_error, result=[])
+            raise exce
         except Exception as insert_data_exc:
             logger.exception(
                 f"[SQLiteManager][insert_data][{transaction_id}] Error: {str(insert_data_exc)}"
             )
             if connection:
                 connection.close()
-            raise Exception(error=self.sql_error, result=[])
+            raise insert_data_exc
         finally:
             if connection:
                 connection.close()
@@ -182,12 +182,12 @@ class SQLiteManager(SqlConfig):
             logger.exception(
                 f"[SQLiteManager][execute_query][{transaction_id}] Error: {str(exce)}"
             )
-            raise Exception(error=self.sql_error, result=[])
+            raise exce
         except Exception as insert_data_exc:
             logger.exception(
                 f"[SQLiteManager][execute_query][{transaction_id}] Error: {str(insert_data_exc)}"
             )
-            raise Exception(error=self.sql_error, result=[])
+            raise insert_data_exc
         finally:
             if connection:
                 connection.close()

@@ -22,7 +22,12 @@ Launch with:
 API_URL = "http://localhost:8083/chatbot"  # Adjust if FastAPI host/port differ
 
 # -----------------------------------------------------------------------------
-# Session‑state bootstrap
+# Poly‑fill: Streamlit 1.32+ renamed experimental_rerun() → rerun()
+# -----------------------------------------------------------------------------
+_RERUN = getattr(st, "rerun", getattr(st, "experimental_rerun", None))
+
+# -----------------------------------------------------------------------------
+# Session-state bootstrap
 # -----------------------------------------------------------------------------
 if "user_id" not in st.session_state:
     st.session_state.user_id = str(uuid.uuid4())
@@ -35,15 +40,10 @@ if "messages" not in st.session_state:
 
 
 def _fmt_complaint_details(details) -> str:
-    """Convert complaint_details (dict | str | None) to a markdown block."""
     if not details:
         return ""
-
-    # If backend sent a *string* instead of dict – just show it verbatim
     if not isinstance(details, dict):
         return f"\n\n**Complaint details**\n{details}\n"
-
-    # Dict → bullet list
     md = "\n\n**Complaint details**\n"
     for k, v in details.items():
         md += f"- **{k.replace('_', ' ').title()}**: {v}\n"
@@ -56,8 +56,6 @@ def _fmt_complaint_details(details) -> str:
 
 
 def _extract_bot_text(payload) -> str:
-    """Return a clean markdown string for the assistant bubble."""
-
     def _join(main: str, details):
         return main + _fmt_complaint_details(details)
 
@@ -73,7 +71,6 @@ def _extract_bot_text(payload) -> str:
     if isinstance(payload, dict) and "response" in payload:
         return _join(payload.get("response", ""), payload.get("complaint_details"))
 
-    # 4 – fallback
     return json.dumps(payload, indent=2)
 
 
@@ -87,7 +84,8 @@ with st.sidebar:
     if st.button("🔄 New session", use_container_width=True):
         st.session_state.clear()
         st.session_state.user_id = str(uuid.uuid4())
-        st.experimental_rerun()
+        if _RERUN:
+            _RERUN()
 
     st.markdown("---")
     st.caption("Made with ❤️ for Cyfuture AI Bot")
@@ -97,19 +95,15 @@ with st.sidebar:
 # -----------------------------------------------------------------------------
 st.title("Cyfuture AI Chatbot 🤝")
 
-# Render conversation history
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"], unsafe_allow_html=True)
 
-# Input box at bottom
 if prompt := st.chat_input("Ask me anything …"):
-    # 1️⃣ Show user bubble and log it
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # 2️⃣ Call backend
     try:
         resp = requests.post(
             API_URL,
@@ -121,10 +115,8 @@ if prompt := st.chat_input("Ask me anything …"):
     except requests.exceptions.RequestException as exc:
         raw_data = {"error": str(exc)}
 
-    # 3️⃣ Format for display
     bot_text = _extract_bot_text(raw_data)
 
-    # 4️⃣ Show assistant bubble and save history
     st.session_state.messages.append({"role": "assistant", "content": bot_text})
     with st.chat_message("assistant"):
         st.markdown(bot_text, unsafe_allow_html=True)
@@ -135,8 +127,8 @@ if prompt := st.chat_input("Ask me anything …"):
 with st.expander("ℹ️ How it works"):
     st.markdown(
         """
-        * Handles **dict** *and* **string** `complaint_details` gracefully.
-        * Understands both `{bot_response: …}` and `{response: …}` schemas.
-        * Bullet‑lists complaint info only when available.
+        * Supports both old and new backend schemas.
+        * `Complaint details` rendered only when present.
+        * Compatible with Streamlit versions **<1.32** (experimental_rerun) and **≥1.32** (rerun).
         """
     )

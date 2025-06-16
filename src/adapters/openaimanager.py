@@ -66,7 +66,7 @@ class OpenaAIManager(OpenAIConfig):
             logger.exception(
                 f"[OpenaAIManager][create_embedding][{transaction_id}] Error: {str(create_embedding_exc)}"
             )
-            raise Exception(error=self.embedding_error)
+            raise create_embedding_exc
         return json_response
 
     @measure_time
@@ -114,17 +114,7 @@ class OpenaAIManager(OpenAIConfig):
             logger.exception(
                 f"[OpenaAIManager][chat_completion][{transaction_id}] Error: {str(chat_completion_exc)}"
             )
-            status_code = getattr(chat_completion_exc, "status_code", 500)
-            error_message = (
-                json.loads(getattr(chat_completion_exc, "response", None).text)
-                .get("error", None)
-                .get("message", None)
-            )
-            raise Exception(
-                error=self.compeltion_error,
-                message=error_message,
-                StatusCode=status_code,
-            )
+            raise chat_completion_exc
         return json_response
 
 

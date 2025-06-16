@@ -45,7 +45,7 @@ class ChatBot:
             )
             return intent
         except Exception as exc:
-            logger.error(
+            logger.exception(
                 f"[ChatBot] - Error occurred while detecting intent for user_id: {self.data.user_id}, Error: {exc}"
             )
             raise exc
@@ -209,7 +209,7 @@ class ChatBot:
             }
             return res
         except Exception as exc:
-            logger.error(
+            logger.exception(
                 f"[ChatBot] - Error occurred for user_id: {self.data.user_id}, Error: {exc}"
             )
             raise exc
